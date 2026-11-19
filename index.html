@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>АІ-методист | Колекція магматичних гірських порід</title>
+    <style>
+        :root {
+            --primary: #991b1b;
+            --primary-light: #dc2626;
+            --bg: #fef2f2;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #fecaca;
+            --accent: #0f766e;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); margin: 0; padding: 0; line-height: 1.6; }
+        header { background: linear-gradient(135deg, #7f1d1d, #b91c1c); color: white; padding: 20px 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header h1 { margin: 0; font-size: 22px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        header p { margin: 5px 0 0; font-size: 14px; opacity: 0.9; }
+        .badge { background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        
+        .container { max-width: 1200px; margin: 25px auto; padding: 0 20px; display: grid; grid-template-columns: 350px 1fr; gap: 25px; }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+
+        .panel { background: var(--card); border-radius: 10px; padding: 20px; border: 1px solid #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .panel h2 { margin-top: 0; font-size: 18px; color: var(--primary); border-bottom: 2px solid #fee2e2; padding-bottom: 10px; }
+
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+        select, button { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 14px; }
+        select:focus { outline: none; border-color: var(--primary-light); }
+
+        .btn-generate { background: var(--primary); color: white; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; margin-top: 10px; font-size: 15px; }
+        .btn-generate:hover { background: #7f1d1d; }
+
+        .toolbar { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .btn-export { background: var(--accent); color: white; border: none; width: auto; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .btn-export:hover { background: #115e59; }
+        .btn-print { background: #475569; color: white; border: none; width: auto; cursor: pointer; font-weight: 600; }
+        .btn-print:hover { background: #334155; }
+        .btn-db { background: #fee2e2; color: #7f1d1d; border: 1px solid #fecaca; width: auto; cursor: pointer; font-weight: 600; margin-left: auto; }
+
+        #output-area { background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 30px; min-height: 500px; }
+        #output-area h3 { color: var(--primary); margin-top: 0; }
+        #output-area table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        #output-area th, #output-area td { border: 1px solid #94a3b8; padding: 8px 12px; text-align: left; font-size: 14px; }
+        #output-area th { background-color: #fee2e2; }
+        .task-box { background: #fef2f2; border-left: 4px solid var(--primary-light); padding: 12px 15px; margin: 12px 0; }
+        .answer-key { background: #f0fdf4; border: 1px dashed #16a34a; padding: 15px; margin-top: 20px; border-radius: 6px; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; overflow-y: auto; }
+        .modal-content { background: white; max-width: 950px; margin: 40px auto; padding: 25px; border-radius: 10px; position: relative; }
+        .close-btn { position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; font-weight: bold; }
+
+        @media print {
+            header, .panel:first-child, .toolbar { display: none !important; }
+            .container { display: block; margin: 0; padding: 0; }
+            #output-area { border: none; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>АІ-методист: Магматичні гірські породи <span class="badge">Автономний режим • База: 20 зразків</span></h1>
+    <p>Генерація методичних матеріалів за 5 змістовними блоками навчальної колекції</p>
+</header>
+
+<div class="container">
+    <div class="panel">
+        <h2>Параметри генерації</h2>
+        
+        <div class="form-group">
+            <label for="block-select">1. Змістовний блок:</label>
+            <select id="block-select">
+                <option value="1">Блок 1. Походження та класифікація магматичних порід</option>
+                <option value="2">Блок 2. Глибинні (інтрузивні) гірські породи</option>
+                <option value="3">Блок 3. Вулканічні (ефузивні) гірські породи</option>
+                <option value="4">Блок 4. Вулканічні уламкові (пірокластичні) породи</option>
+                <option value="5">Блок 5. Використання та поширення в Україні</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="type-select">2. Тип методичного матеріалу:</label>
+            <select id="type-select">
+                <option value="demo">Сценарій фронтальної демонстрації зразків</option>
+                <option value="worksheet">Робочий аркуш для учнів (з завданнями)</option>
+                <option value="notes">Опорний конспект уроку</option>
+                <option value="test">Тестові питання з ключами відповідей</option>
+                <option value="oral">Питання для усного контролю знань</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="variant-select">3. Варіант компонування:</label>
+            <select id="variant-select">
+                <option value="standard">Базовий рівень (НУШ / 6–8 класи)</option>
+                <option value="advanced">Поглиблений рівень (профільний / геологія)</option>
+            </select>
+        </div>
+
+        <button type="button" class="btn-generate" onclick="generateMaterial()">⚡ Згенерувати матеріал</button>
+
+        <div style="margin-top: 25px; font-size: 13px; color: #64748b; background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <strong>Гарантія достовірності:</strong><br>
+            Усі завдання, таблиці та ключі формуються виключно із закритої бази знань, що відповідає 20 підписаним зразкам у контейнерах або на планшетах.
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="toolbar">
+            <button type="button" class="btn-export" onclick="exportToWord()">📄 Експорт у Word (.doc)</button>
+            <button type="button" class="btn-print" onclick="window.print()">🖨️ Друк / Зберегти в PDF</button>
+            <button type="button" class="btn-db" onclick="toggleModal(true)">🗄️ Переглянути базу (20 зразків)</button>
+        </div>
+
+        <div id="output-area">
+            <div style="text-align: center; color: #64748b; padding: 80px 20px;">
+                <h3>Робоча область АІ-методиста готова</h3>
+                <p>Оберіть змістовний блок і тип документа зліва, після чого натисніть <strong>«Згенерувати матеріал»</strong>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="db-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="toggleModal(false)">&times;</span>
+        <h2>Перевірена база знань колекції (20 зразків)</h2>
+        <div id="db-table-container"></div>
+    </div>
+</div>
+
+<script>
+const ROCKS_DB = new Array(
+    { id: 1, name: "Граніт сірий", blocks: "1,2,5", origin: "Глибинна (інтрузивна)", composition: "Кисла (кварц, польовий шпат, слюда)", features: "Повнокристалічна зерниста структура, світло-сірий колір, висока твердість і міцність.", ukraine: "Український щит (Житомирська, Вінницька, Кіровоградська обл.)", usage: "Будівництво, бруківка, щебінь, облицювання споруд." },
+    { id: 2, name: "Граніт червоний (рапаківі)", blocks: "2,5", origin: "Глибинна (інтрузивна)", composition: "Кисла (калієвий польовий шпат, кварц, біотит)", features: "Рожево-червоний колір, крупнозерниста або овоідальна (очкова) структура, добре полірується.", ukraine: "Коростенський та Корсунь-Новомиргородський плутони", usage: "Облицювання станцій метро, пам'ятники, набережні." },
+    { id: 3, name: "Гранодіорит", blocks: "2", origin: "Глибинна (інтрузивна)", composition: "Помірно-кисла (плагіоклаз, кварц, рогова обманка)", features: "Темніший за звичайний граніт, рівномірнозернистий, висока механічна міцність.", ukraine: "Український щит (Середнє Придніпров'я)", usage: "Високоміцний щебінь, бутовий та бордюрний камінь." },
+    { id: 4, name: "Сієніт", blocks: "2", origin: "Глибинна (інтрузивна)", composition: "Середня (лужний польовий шпат, біотит, майже без кварцу)", features: "Сірий або рожевуватий, кристалічно-зернистий, зовні схожий на граніт, але без зерен кварцу.", ukraine: "Приазов'я (Жовтневий масив)", usage: "Керамічна та скляна промисловість, облицювання." },
+    { id: 5, name: "Діорит", blocks: "2", origin: "Глибинна (інтрузивна)", composition: "Середня (плагіоклаз і рогова обманка)", features: "Темно-сірий із зеленуватим відтінком, середньозернистий, дуже в'язкий і важкий.", ukraine: "Приазов'я, Побужжя", usage: "Дорожнє будівництво, виготовлення бруківки та щебеню." },
+    { id: 6, name: "Габро", blocks: "1,2,5", origin: "Глибинна (інтрузивна)", composition: "Основна (основний плагіоклаз, піроксен)", features: "Чорний або темно-зелений, важкий, повнокристалічний, дає дзеркальний чорний полірований зріз.", ukraine: "Житомирська обл. (Головинське родовище), Приазов'я", usage: "Монументальні пам'ятники, облицювальні плити, щебінь." },
+{ id: 7, name: "Лабрадорит", blocks: "2,5", origin: "Глибинна (інтрузивна)", composition: "Основна (переважно мінерал лабрадор)", features: "Темно-сірий або чорний із яскравими синьо-блакитними переливами (іризацією) на кристалах.", ukraine: "Житомирська та Черкаська обл. (унікальні світові поклади)", usage: "Елітне архітектурне облицювання (інтер'єри, фасади)." },
+{ id: 8, name: "Перидотит", blocks: "2", origin: "Глибинна (інтрузивна)", composition: "Ультраосновна (олівін та піроксен)", features: "Дуже темний, зеленувато-чорний, висока густина, головна порода верхньої мантії Землі.", ukraine: "Побужжя (Український щит)", usage: "Пошукова ознака родовищ хрому, платини та нікелю." },
+{ id: 9, name: "Пегматит гранітний", blocks: "2,5", origin: "Глибинна (жильна)", composition: "Кисла (гігантські кристали кварцу, мікрокліну, слюди)", features: "Гігантськозерниста або «письмова» (єврейський камінь) структура з вростаннями кварцу.", ukraine: "Волинь (Хорошівське родовище), Приазов'я", usage: "Керамічна сировина, джерело дорогоцінного каміння (топаз, берил)." },
+{ id: 10, name: "Базальт стовпчастий", blocks: "1,3,5", origin: "Вулканічна (ефузивна)", composition: "Основна (аналог габро, що застиг на поверхні)", features: "Чорний або темно-сірий, прихованокристалічний, щільний, часто утворює шестигранні стовпи.", ukraine: "Рівненська обл. (Базальтові стовпи), Закарпаття", usage: "Кам'яне литво, мінеральна вата (утеплювач), дорожній щебінь." },
+{ id: 11, name: "Андезит", blocks: "3,5", origin: "Вулканічна (ефузивна)", composition: "Середня (вулканічний аналог діориту)", features: "Темно-сірий або буруватий із вкрапленнями світлих кристалів плагіоклазу (порфірова структура).", ukraine: "Закарпаття (Вигорлат-Гутинський вулканічний хребет)", usage: "Кислототривкий матеріал у хімічній промисловості, щебінь." },
+{ id: 12, name: "Ліпарит (ріоліт)", blocks: "3", origin: "Вулканічна (ефузивна)", composition: "Кисла (вулканічний аналог граніту)", features: "Світло-сірий, рожевий або жовтуватий, часто флюїдальна (смугаста) текстура зі скляною масою.", ukraine: "Закарпаття (Берегівське горбогір'я)", usage: "Будівельний та декоративний камінь, заповнювач бетонів." },
+{ id: 13, name: "Трахіт", blocks: "3", origin: "Вулканічна (ефузивна)", composition: "Середня лужна (вулканічний аналог сієніту)", features: "Світло-сірий або жовтуватий, шорсткий на дотик, матовий злам.", ukraine: "Приазов'я, Закарпаття", usage: "Кислототривке футерування, будівельний камінь." },
+{ id: 14, name: "Діабаз (долерит)", blocks: "3,5", origin: "Вулканічна (гіпабісальна / жильна)", composition: "Основна (проміжна між габро і базальтом)", features: "Темно-сірий із зеленуватим відтінком, дрібнозернистий, надзвичайно в'язкий і стійкий до стирання.", ukraine: "Волинь, Криворізький басейн, Крим (Аю-Даг)", usage: "Дорожня бруківка, облицювання цоколів, лиття." },
+{ id: 15, name: "Обсидіан (вулканічне скло)", blocks: "1,3", origin: "Вулканічна (ефузивна)", composition: "Кисла (аморфне вулканічне скло)", features: "Чорний, блискучий, скляний блиск, гострий раковистий злам, утворюється при миттєвому охолодженні лави.", ukraine: "Закарпаття (околиці м. Берегове та м. Хуст)", usage: "Виробництво перліту (теплоізоляція), ювелірні та декоративні вироби." },
+{ id: 16, name: "Пемза", blocks: "1,3", origin: "Вулканічна (ефузивна)", composition: "Кисла (спінене вулканічне скло)", features: "Світло-сіра або білувата, надзвичайно пориста (до 80% об'єму), легша за воду (не тоне).", ukraine: "Прояви у вулканічних товщах Закарпаття", usage: "Легкі бетони, фільтри, абразивний та шліфувальний матеріал." },
+{ id: 17, name: "Туф вулканічний", blocks: "1,4,5", origin: "Вулканічна уламкова (пірокластична)", composition: "Зцементований вулканічний попіл та уламки", features: "Пористий, легкий, світло-сірий, рожевий або зеленуватий, легко обробляється пилкою.", ukraine: "Закарпаття (Сокирницьке родовище цеолітових туфів)", usage: "Стіновий камінь, добавка до цементу, природні сорбенти." },
+{ id: 18, name: "Туфобрекчія", blocks: "4", origin: "Вулканічна уламкова (пірокластична)", composition: "Великі гострі уламки лави у вулканічному попелі", features: "Неоднорідна уламкова будова з великими включеннями вулканічних бомб і лапілі.", ukraine: "Закарпаття, Гірський Крим (Карадаг)", usage: "Декоративний камінь, будівельні наповнювачі." },
+{ id: 19, name: "Вулканічний попіл (тефра)", blocks: "4", origin: "Вулканічна уламкова (пухка)", composition: "Найтонші частинки розпиленої магми (<2 мм)", features: "Пухкий, порошкоподібний або піскуватий матеріал сірого кольору з гострими скляними частинками.", ukraine: "Давні попільні прошарки в Карпатах і Придністров'ї", usage: "Виробництво пуцоланових цементів, абразивних паст." },
+{ id: 20, name: "Ігнімбрит", blocks: "4", origin: "Вулканічна уламкова (спеклий туф)", composition: "Сплавлені частинки розпеченого попелу і пемзи", features: "Щільна порода зі смугастою («полум'яподібною») текстурою сплющених скляних лінз.", ukraine: "Закарпатський прогин", usage: "Облицювальний та стіновий будівельний камінь." }
+);
+function getBlockInfo(id) {
+if (id === 1) return { title: "Походження та класифікація магматичних гірських порід", goal: "Сформувати уявлення про утворення магматичних порід при охолодженні магми на глибині (інтрузивні) та лави на поверхні (ефузивні), а також їх поділ за вмістом кремнезему." };
+if (id === 2) return { title: "Глибинні (інтрузивні) магматичні гірські породи", goal: "Дослідити повнокристалічну будову гранітів, габро, лабрадориту та пегматитів, пояснити залежність розміру кристалів від швидкості охолодження магми." };
+if (id === 3) return { title: "Вулканічні (ефузивні) магматичні гірські породи", goal: "Порівняти будову виливних порід (базальт, обсидіан, пемза) з їхніми глибинними аналогами та пояснити походження пористої і скляної структур." };
+if (id === 4) return { title: "Вулканічні уламкові (пірокластичні) породи", goal: "Ознайомитися з продуктами вибухових вивержень вулканів (вулканічний туф, попіл, туфобрекчія, ігнімбрит) та їх відмінностями від осадових порід." };
+return { title: "Використання магматичних порід та їх поширення в Україні", goal: "Пов'язати тектонічні структури України (Український щит, Закарпатський вулканічний пояс, Волинь) з родовищами будівельного та облицювального каменю." };
+}
+function generateMaterial() {
+const blockId = parseInt(document.getElementById('block-select').value, 10);
+const matType = document.getElementById('type-select').value;
+const level = document.getElementById('variant-select').value;
+const blockData = getBlockInfo(blockId);
+const samples = ROCKS_DB.filter(r => r.blocks.split(',').includes(String(blockId)));
+let html = <div style="border-bottom: 2px solid #991b1b; padding-bottom: 10px; margin-bottom: 20px;"> <span style="font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: bold;"> Навчальна колекція «Магматичні гірські породи» • ${level === 'standard' ? 'Базовий рівень (НУШ)' : 'Поглиблений рівень'} </span> <h2 style="margin: 5px 0; color: #991b1b;">Блок ${blockId}. ${blockData.title}</h2> </div>;
+if (matType === 'demo') {
+html += renderDemoScenario(blockId, blockData, samples, level);
+} else if (matType === 'worksheet') {
+html += renderWorksheet(blockId, blockData, samples, level);
+} else if (matType === 'notes') {
+html += renderNotes(blockId, blockData, samples, level);
+} else if (matType === 'test') {
+html += renderTest(blockId, blockData, samples, level);
+} else if (matType === 'oral') {
+html += renderOralQuestions(blockId, blockData, samples, level);
+}
+document.getElementById('output-area').innerHTML = html;
+}
+function renderDemoScenario(blockId, blockData, samples, level) {
+let rows = samples.map(s => `
+№ ${s.id}
+${s.name}${s.origin}${s.features}`).join('');
+return <h3>Сценарій проведення фронтальної демонстрації зразків</h3> <p><strong>Мета демонстрації:</strong> ${blockData.goal}</p> <p><strong>Необхідні зразки з колекції:</strong> контейнери/планшети ${samples.map(s =>№${s.id} (${s.name})`).join(', ')}.
+Етап 1. Вступний інструктаж та актуалізація (3–4 хв)
+
+Учитель демонструє підписані зразки колекції та наголошує: зовнішній вигляд магматичної породи напряму залежить від глибини її застигання — повільне охолодження у надрах формує великі кристали, а швидке на поверхні утворює дрібнозернисту, скляну або пористу масу.
+Етап 2. Покрокова демонстрація зразків (10–12 хв)
+
+Передавайте контейнери (планшети) по рядах або демонструйте через документ-камеру, акцентуючи увагу на діагностичних ознаках:
+${rows}
+
+Зразок	Назва породи	Умови утворення	Діагностичні ознаки для спостереження
+
+Етап 3. Підсумкове узагальнення (3 хв)
+
+${level === 'advanced'
+? 'Запропонуйте учням порівняти глибинні та виливні аналоги однакового хімічного складу: граніт (№1) ↔ ліпарит (№12), габро (№6) ↔ базальт (№10), діорит (№5) ↔ андезит (№11).'
+: 'Запитайте учнів, за якими ознаками (розмір кристалів, наявність пор, скляний блиск) можна відрізнити глибинні магматичні породи від вулканічних.'}
+
+`;
+}
+function renderWorksheet(blockId, blockData, samples, level) {
+let tableRows = samples.slice(0, 4).map(s => `
+№ \({s.id}. \){s.name}
+`).join('');
+let matchPairs = samples.slice(0, 4).map((s, idx) => <li><strong>${idx + 1}.</strong> ${s.origin} (${s.composition.split('(').at(0).trim()}) &nbsp;&nbsp;→&nbsp;&nbsp; ______________________________</li>).join('');
+const firstSample = samples.at(0);
+return <h3>Робочий аркуш учня / учениці</h3> <p><strong>Прізвище, ім'я:</strong> ___________________________________ &nbsp;&nbsp; <strong>Клас:</strong> _______ &nbsp;&nbsp; <strong>Дата:</strong> __________</p> <p><strong>Досліджувані зразки колекції:</strong> ${samples.map(s =>№${s.id}`).join(', ')}.
+Завдання 1. Генетична класифікація (встановіть відповідність)
+
+Користуючись підписаними зразками колекції та супровідною інструкцією, доберіть до кожної характеристики відповідну назву магматичної породи:
+${matchPairs}
+Завдання 2. Практичне дослідження зразків у контейнерах / на планшеті
+
+Огляньте зразки та заповніть таблицю спостережень:
+${tableRows}
+
+№ та назва зразка	Колір та блиск	Структура (зерниста, скляна, пориста, уламкова)	Використання людиною
+
+Завдання 3. Проблемне запитання
+
+${blockId === 1 || blockId === 3
+? 'У колекції є два зразки, що утворилися при виверженні вулканів: №15 (Обсидіан) та №16 (Пемза). Поясніть, чому обсидіан має вигляд суцільного чорного скла, а пемза нагадує легку губку, що не тоне у воді.'
+: blockId === 5
+? 'Поясніть, чому промисловий видобуток граніту, габро та лабрадориту в Україні зосереджений у межах Українського щита, а базальту і туфів — на Волині та в Закарпатті.'
+: Поясніть, які особливості застигання магми зумовили формування структури зразка <strong>№${firstSample.id} (${firstSample.name})</strong>.}
+
+`;
+}
+function renderNotes(blockId, blockData, samples, level) {
+let cards = samples.map(s => <li style="margin-bottom: 10px;"> <strong>Зразок №${s.id}. ${s.name}</strong> (${s.origin.toLowerCase()})<br> <em>Склад:</em> ${s.composition}.<br> <em>Ознаки:</em> ${s.features}<br> <em>Поширення в Україні та застосування:</em> ${s.ukraine}. Використання: ${s.usage.toLowerCase()} </li>).join('');
+return `
+Опорний конспект для учнів
+Ключова ідея теми: ${blockData.goal}
+Головні терміни та поняття:
+
+Магматичні гірські породи — породи, що утворилися внаслідок охолодження та кристалізації природного силікатного розплаву (магми або лави).
+Інтрузивні (глибинні) породи — застигають повільно на великій глибині, тому мають повнокристалічну зернисту структуру (граніт, габро).
+Ефузивні (вулканічні) породи — утворюються при швидкому охолодженні лави на земній поверхні, мають прихованокристалічну, скляну або пористу будову (базальт, обсидіан, пемза).
+Пірокластичні (вулканічні уламкові) породи — формуються з твердих продуктів виверження вулканів: попелу, лапілі, вулканічних бомб (вулканічний туф).
+
+Характеристика еталонних зразків колекції за темою:
+${cards}
+`;
+}
+function renderTest(blockId, blockData, samples, level) {
+const s1 = samples.at(0);
+const s2 = samples.at(1) || samples.at(0);
+const s3 = samples.at(-1);
+return <h3>Тестові завдання для перевірки знань (з ключами)</h3> <p><em>Тест складено виключно за матеріалами зразків колекції: ${samples.map(s =>№${s.id}`).join(', ')}.
+1. До якої групи за умовами утворення належить порода «${s1.name}» (зразок №${s1.id})?
+А) Осадова хемогенна    Б) ${s1.origin}    В) Осадова біогенна    Г) Метаморфічна сланцювата
+2. Яка діагностична ознака є характерною для зразка №${s2.id} (${s2.name})?
+А) ${s2.features}
+
+Б) Наявність відбитків черепашок молюсків та рослин
+
+В) Легка розчинність у холодній воді та солоний смак
+
+Г) Пластичність при змочуванні водою
+3. У якому регіоні України зосереджені поклади породи «${s3.name}» (зразок №${s3.id})?
+А) Причорноморська низовина    Б) ${s3.ukraine}    В) Тільки на дні Азовського моря    Г) Поліська низовина (болотні масиви)
+4. Установіть відповідність між номером зразка у колекції та сферою його господарського застосування:
+1. Зразок №${s1.id} (${s1.name})  —  А) ${s3.usage}
+
+2. Зразок №${s3.id} (${s3.name})  —  Б) ${s1.usage}
+
+3. Зразок №7 (Лабрадорит)  —  В) Елітне архітектурне облицювання з ефектом іризації
+🔑 КЛЮЧІ ВІДПОВІДЕЙ ДЛЯ ВЧИТЕЛЯ:
+
+1: Б (${s1.origin}) |
+2: А |
+3: Б (${s3.ukraine}) |
+4: 1–Б, 2–А, 3–В.
+
+`;
+}
+function renderOralQuestions(blockId, blockData, samples, level) {
+const sFirst = samples.at(0);
+const sLast = samples.at(-1);
+return `
+Запитання для усного контролю та фронтального опитування
+Тематичний блок: ${blockData.title}
+Блок А. Репродуктивні запитання (робота зі зразками в руках):
+
+Знайдіть у колекції зразок №${sFirst.id} (${sFirst.name}). Опишіть його колір, розмір кристалів та особливості будови.
+Як і в яких умовах сформувався зразок №${sLast.id} (${sLast.name})?
+Назвіть сфери практичного використання зразків ${samples.map(s => №${s.id}).join(', ')} у будівництві та промисловості.
+
+Блок Б. Аналітичні та порівняльні запитання:
+
+Чому в глибинних породах (наприклад, у граніті чи габро) кристали мінералів добре помітні неозброєним оком, а у виливних (базальт, обсидіан) — відсутні або мікроскопічні?
+Порівняйте зразки №${sFirst.id} (${sFirst.name}) та №${sLast.id} (${sLast.name}). Що в них спільного, а в чому полягає головна відмінність?
+Які магматичні породи України мають світове значення як декоративно-облицювальний камінь і де їх видобувають?
+${level === 'advanced' ? 'Поясніть принцип поділу магматичних порід на кислі, середні, основні та ультраосновні за вмістом кремнезему (SiO₂) та забарвленням.' : ''}
+
+
+`;
+}
+function exportToWord() {
+const content = document.getElementById('output-area').innerHTML;
+if (content.includes('Робоча область АІ-методиста готова')) {
+alert('Спочатку згенеруйте матеріал, натиснувши кнопку «Згенерувати матеріал»!');
+return;
+}
+const header = "Методичний матеріалbody{font-family: 'Times New Roman', serif; font-size: 12pt;} table{border-collapse: collapse; width: 100%;} th, td{border: 1px solid black; padding: 6px;}";
+const footer = "";
+const sourceHTML = header + content + footer;
+const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+const fileDownload = document.createElement("a");
+document.body.appendChild(fileDownload);
+fileDownload.href = source;
+fileDownload.download = 'Metodychnyi_material_Magmatychni_porody.doc';
+fileDownload.click();
+document.body.removeChild(fileDownload);
+}
+function toggleModal(show) {
+const modal = document.getElementById('db-modal');
+if (show) {
+let rows = ROCKS_DB.map(r => `
+№${r.id}
+${r.name}${r.origin}${r.features}${r.ukraine}).join(''); document.getElementById('db-table-container').innerHTML = 
+${rows}
+
+№
+	Назва	Походження	Ознаки	Україна
+
+`;
+modal.style.display = 'block';
+} else {
+modal.style.display = 'none';
+}
+}
